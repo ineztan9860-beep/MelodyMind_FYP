@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "882802238602",
+    "project_id": "music-app-52dfd",
+    "storage_bucket": "music-app-52dfd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:882802238602:android:51a17d6d6e542809243973",
+        "android_client_info": {
+          "package_name": "com.example.interactive_musical_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAu3PfiGZybFtPwWZ_TYSGgQ4RhhExQcng"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
