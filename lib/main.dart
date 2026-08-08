@@ -50,6 +50,9 @@ class MelodyMindApp extends ConsumerWidget {
     return MaterialApp(
       title: 'MelodyMind',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      ),
       theme: ThemeData(
         brightness: isDark ? Brightness.dark : Brightness.light,
         fontFamily: 'Inter',
@@ -155,8 +158,6 @@ class MainNavigation extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationState extends ConsumerState<MainNavigation> {
-  int _currentIndex = 0;
-
   final List<Widget> _screens = [
     const HomeScreen(),        // Home / Dashboard
     const AnalyticsScreen(),   // Progress / Analytics
@@ -169,18 +170,16 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(audioServiceProvider).playBackgroundMusic();
-      // Sync to the requested tab index
-      _currentIndex = ref.read(navTabIndexProvider);
-      if (mounted) setState(() {});
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentIndex = ref.watch(navTabIndexProvider);
     
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: _screens[currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -192,8 +191,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          currentIndex: currentIndex,
+          onTap: (index) => ref.read(navTabIndexProvider.notifier).state = index,
           selectedItemColor: const Color(0xFF22D3EE),
           unselectedItemColor: isDark ? Colors.white24 : const Color(0xFF94A3B8),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),

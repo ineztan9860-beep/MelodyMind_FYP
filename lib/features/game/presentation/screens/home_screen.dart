@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_musical_game/features/profile/providers/user_provider.dart';
+import 'package:interactive_musical_game/core/providers/nav_provider.dart';
 import 'mode_selection_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -65,6 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding:
               const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
           child: Column(
@@ -74,54 +76,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border:
-                              Border.all(color: theme.dividerColor, width: 2),
-                        ),
-                        child: ClipOval(
-                          child: avatarUrl.startsWith('data:image')
-                              ? Image.memory(
-                                  base64Decode(avatarUrl.split(',').last),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    Icons.person,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                )
-                              : (isNetwork
-                              ? Image.network(
-                                  avatarUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    Icons.person,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.person,
-                                  color: theme.colorScheme.primary,
-                                )),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Welcome back,',
-                              style: theme.textTheme.bodyMedium),
-                          Text(
-                            userName,
-                            style: theme.textTheme.headlineMedium,
+                  GestureDetector(
+                    onTap: () {
+                      ref.read(navTabIndexProvider.notifier).state = 3;
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border:
+                                Border.all(color: theme.dividerColor, width: 2),
                           ),
-                        ],
-                      ),
-                    ],
+                          child: ClipOval(
+                            child: avatarUrl.startsWith('data:image')
+                                ? Image.memory(
+                                    base64Decode(avatarUrl.split(',').last),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.person,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  )
+                                : (isNetwork
+                                ? Image.network(
+                                    avatarUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.person,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.person,
+                                    color: theme.colorScheme.primary,
+                                  )),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Welcome back,',
+                                style: theme.textTheme.bodyMedium),
+                            Text(
+                              userName,
+                              style: theme.textTheme.headlineMedium,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.push(
