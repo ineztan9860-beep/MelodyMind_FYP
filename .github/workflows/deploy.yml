@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -24,10 +26,13 @@ jobs:
         run: flutter pub get
 
       - name: Build Web App
-        run: flutter build web --release --base-href "/MelodyMind_FYP/"
+        run: |
+          REPO_NAME=${GITHUB_REPOSITORY#*/}
+          flutter build web --release --base-href "/$REPO_NAME/"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           folder: build/web
           branch: gh-pages

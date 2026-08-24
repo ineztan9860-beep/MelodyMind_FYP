@@ -56,3 +56,11 @@ package.json
 package-lock.json
 scratch/
 
+
+# Firebase & Secret Configuration Files
+**/google-services*.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+*.env
+*.keystore
+*.jks
