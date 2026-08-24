@@ -20,6 +20,8 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   int _multiplier = 1;
   double _progress = 0.0;
   bool _isGameOver = false;
+  bool _isLevelComplete = false;
+  static const int _targetQuestions = 10;
   String _targetNote = 'C';
   String? _selectedNote;
   bool? _isCorrect;
@@ -61,6 +63,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   }
 
   void _pickRandomNote() {
+    if (_isGameOver || _isLevelComplete) return;
     setState(() {
       _targetNote = _notes[_random.nextInt(_notes.length)];
       _selectedNote = null;
@@ -72,6 +75,24 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
         ref.read(audioServiceProvider).playNote(_targetNote);
       }
     });
+  }
+
+  void _restartGame() {
+    setState(() {
+      _score = 0;
+      _streak = 0;
+      _multiplier = 1;
+      _progress = 0.0;
+      _isGameOver = false;
+      _isLevelComplete = false;
+      _correctAnswers = 0;
+      _totalAnswers = 0;
+      _selectedNote = null;
+      _isCorrect = null;
+      _showHint = false;
+      _initializeDifficulties();
+    });
+    _pickRandomNote();
   }
 
   Future<void> _saveGameResults() async {
@@ -91,7 +112,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   }
 
   void _handleNoteTap(String note) {
-    if (_selectedNote != null || _isGameOver) return;
+    if (_selectedNote != null || _isGameOver || _isLevelComplete) return;
     setState(() {
       _selectedNote = note;
       _isCorrect = (note == _targetNote);
@@ -112,8 +133,13 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
         if (widget.difficulty == 'Medium') points = 150;
 
         _score += (points * _multiplier);
-        _progress = min(1.0, _progress + 0.05);
+        _progress = min(1.0, _correctAnswers / _targetQuestions);
         ref.read(audioServiceProvider).playSuccess();
+
+        if (_correctAnswers >= _targetQuestions || _progress >= 1.0) {
+          _isLevelComplete = true;
+          _saveGameResults();
+        }
       } else {
         _streak = 0;
         _multiplier = 1;
@@ -401,8 +427,9 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed:
-                          _selectedNote != null ? _pickRandomNote : null,
+                      onPressed: (_selectedNote != null && !_isLevelComplete && !_isGameOver)
+                          ? _pickRandomNote
+                          : null,
                       child: const Text('Next Question',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.bold)),
@@ -412,7 +439,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                 ],
               ),
             ),
-            if (_isGameOver)
+            if (_isGameOver || _isLevelComplete)
               Container(
                 color: Colors.black.withValues(alpha: 0.8),
                 child: Center(
@@ -428,45 +455,85 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.sentiment_very_dissatisfied,
-                            size: 64, color: Color(0xFF22D3EE)),
+                        Icon(
+                          _isLevelComplete
+                              ? Icons.emoji_events
+                              : Icons.sentiment_very_dissatisfied,
+                          size: 64,
+                          color: _isLevelComplete
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF22D3EE),
+                        ),
                         const SizedBox(height: 16),
-                        Text('Game Over',
-                            style: theme.textTheme.headlineLarge),
+                        Text(
+                          _isLevelComplete ? 'Level Complete! 🎉' : 'Game Over',
+                          style: theme.textTheme.headlineLarge,
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 4),
-                        Text('Your Score: $_score',
-                            style: theme.textTheme.bodyLarge),
+                        Text(
+                          'Your Score: $_score',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Accuracy: ${(_totalAnswers == 0 ? 0 : (_correctAnswers / _totalAnswers * 100)).toStringAsFixed(0)}%  •  XP: +${_score ~/ 10}',
+                          style: theme.textTheme.bodyMedium,
+                        ),
                         const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFF1E3A8A),
+                                backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.all(14),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(12))),
+                                    borderRadius: BorderRadius.circular(12))),
                             onPressed: () {
-                              double acc = _totalAnswers == 0 ? 0.0 : (_correctAnswers / _totalAnswers) * 100;
+                              double acc = _totalAnswers == 0
+                                  ? 0.0
+                                  : (_correctAnswers / _totalAnswers) * 100;
                               int xp = _score ~/ 10;
                               Navigator.pushReplacementNamed(
-                                context, '/results',
-                                arguments: {'score': _score, 'accuracy': acc, 'xpGained': xp},
+                                context,
+                                '/results',
+                                arguments: {
+                                  'score': _score,
+                                  'accuracy': acc,
+                                  'xpGained': xp
+                                },
                               );
                             },
-                            child: const Text('See Results',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            child: const Text('See Full Results',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                         const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF22D3EE),
+                              side: const BorderSide(color: Color(0xFF22D3EE)),
+                              padding: const EdgeInsets.all(12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: _restartGame,
+                            child: const Text('Play Again',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         TextButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                              context, '/home', (_) => false),
                           child: const Text('Back to Home',
-                              style:
-                                  TextStyle(color: Color(0xFF22D3EE))),
+                              style: TextStyle(color: Color(0xFF64748B))),
                         ),
                       ],
                     ),

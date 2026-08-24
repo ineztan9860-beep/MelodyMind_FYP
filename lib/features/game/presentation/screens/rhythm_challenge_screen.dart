@@ -20,6 +20,33 @@ class _RhythmChallengeScreenState
     extends ConsumerState<RhythmChallengeScreen> {
   final List<String> _naturalNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
+  static const List<Map<String, dynamic>> _songSequences = [
+    {
+      'title': 'Twinkle Twinkle Little Star',
+      'notes': ['C', 'C', 'G', 'G', 'A', 'A', 'G', 'F', 'F', 'E', 'E', 'D', 'D', 'C'],
+    },
+    {
+      'title': 'Mary Had a Little Lamb',
+      'notes': ['E', 'D', 'C', 'D', 'E', 'E', 'E', 'D', 'D', 'D', 'E', 'G', 'G'],
+    },
+    {
+      'title': 'Ode to Joy',
+      'notes': ['E', 'E', 'F', 'G', 'G', 'F', 'E', 'D', 'C', 'C', 'D', 'E', 'E', 'D', 'D'],
+    },
+    {
+      'title': 'Jingle Bells',
+      'notes': ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'G', 'C', 'D', 'E'],
+    },
+    {
+      'title': 'Row Row Row Your Boat',
+      'notes': ['C', 'C', 'C', 'D', 'E', 'E', 'D', 'E', 'F', 'G'],
+    },
+    {
+      'title': 'Happy Birthday',
+      'notes': ['C', 'C', 'D', 'C', 'F', 'E', 'C', 'C', 'D', 'C', 'G', 'F'],
+    },
+  ];
+
   // ── Game state ──────────────────────────────────────────────────────────
   int _score = 0;
   int _correctTaps = 0;
@@ -29,7 +56,8 @@ class _RhythmChallengeScreenState
   String _feedback = '';
   Color _feedbackColor = Colors.transparent;
   bool _showHint = false; // show label hint after wrong tap
-  String _difficulty = 'Medium';
+  String _difficulty = 'Easy';
+  String? _currentSongTitle;
 
   late List<String> _sequence;
   String? _activePressedKey;
@@ -47,18 +75,28 @@ class _RhythmChallengeScreenState
     super.didChangeDependencies();
     if (!_initializedDifficulty) {
       final args = ModalRoute.of(context)?.settings.arguments as String?;
-      if (args != null) {
+      if (args != null && (args == 'Easy' || args == 'Medium' || args == 'Hard')) {
         _difficulty = args;
+        _generateSequence();
       }
       _initializedDifficulty = true;
     }
   }
 
   void _generateSequence() {
-    final rng = DateTime.now().millisecondsSinceEpoch;
-    _sequence = List.generate(10, (i) {
-      return _naturalNotes[(rng + i * 37) % _naturalNotes.length];
-    });
+    if (_difficulty == 'Hard') {
+      final rng = DateTime.now().millisecondsSinceEpoch;
+      final songIndex = rng % _songSequences.length;
+      final song = _songSequences[songIndex];
+      _currentSongTitle = song['title'] as String;
+      _sequence = List<String>.from(song['notes'] as List);
+    } else {
+      _currentSongTitle = null;
+      final rng = DateTime.now().millisecondsSinceEpoch;
+      _sequence = List.generate(10, (i) {
+        return _naturalNotes[(rng + i * 37) % _naturalNotes.length];
+      });
+    }
     _currentIndex = 0;
     _showHint = false;
   }
@@ -208,47 +246,73 @@ class _RhythmChallengeScreenState
             // ── Difficulty Selector ───────────────────────────────────────
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Medium Mode (Labels)'),
-                    selected: _difficulty == 'Medium',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _difficulty = 'Medium';
-                        });
-                      }
-                    },
-                    selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
-                    checkmarkColor: const Color(0xFF3B82F6),
-                    labelStyle: TextStyle(
-                      color: _difficulty == 'Medium' ? const Color(0xFF3B82F6) : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Easy Mode (Labels)'),
+                      selected: _difficulty == 'Easy',
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _difficulty = 'Easy';
+                            _generateSequence();
+                          });
+                        }
+                      },
+                      selectedColor: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      checkmarkColor: const Color(0xFF10B981),
+                      labelStyle: TextStyle(
+                        color: _difficulty == 'Easy' ? const Color(0xFF10B981) : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  ChoiceChip(
-                    label: const Text('Hard Mode (No Labels)'),
-                    selected: _difficulty == 'Hard',
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _difficulty = 'Hard';
-                        });
-                      }
-                    },
-                    selectedColor: const Color(0xFFEF4444).withValues(alpha: 0.2),
-                    checkmarkColor: const Color(0xFFEF4444),
-                    labelStyle: TextStyle(
-                      color: _difficulty == 'Hard' ? const Color(0xFFEF4444) : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Medium Mode (No Labels)'),
+                      selected: _difficulty == 'Medium',
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _difficulty = 'Medium';
+                            _generateSequence();
+                          });
+                        }
+                      },
+                      selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                      checkmarkColor: const Color(0xFF3B82F6),
+                      labelStyle: TextStyle(
+                        color: _difficulty == 'Medium' ? const Color(0xFF3B82F6) : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Hard Mode (Songs)'),
+                      selected: _difficulty == 'Hard',
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _difficulty = 'Hard';
+                            _generateSequence();
+                          });
+                        }
+                      },
+                      selectedColor: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      checkmarkColor: const Color(0xFFEF4444),
+                      labelStyle: TextStyle(
+                        color: _difficulty == 'Hard' ? const Color(0xFFEF4444) : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -267,9 +331,13 @@ class _RhythmChallengeScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Target Sequence — tap in order:',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      _currentSongTitle != null
+                          ? '🎵 Song: $_currentSongTitle — tap in order:'
+                          : 'Target Sequence — tap in order:',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 8),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -562,7 +630,7 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: difficulty == 'Medium'
+                    child: difficulty == 'Easy'
                         ? Center(
                             child: Align(
                               alignment: Alignment.bottomCenter,
@@ -621,7 +689,7 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: difficulty == 'Medium'
+                    child: difficulty == 'Easy'
                         ? Center(
                             child: Align(
                               alignment: Alignment.bottomCenter,

@@ -461,6 +461,24 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 20),
+                  if (!_isGameOver)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _finishGame,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B5CF6),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Finish & Save Score',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -505,8 +523,8 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                   'When "YOUR TURN" appears, tap the tiles in the EXACT same order.',
                   theme),
               const SizedBox(height: 12),
-              _tutorialStep('3', '❤️ Lives',
-                  'You have 3 lives. A wrong tap costs one life. Lose all 3 and the game ends.',
+              _tutorialStep('3', '❤️ Lives & Ending',
+                  'You have 3 lives. Lose all 3 to end, or tap "Finish & Save Score" anytime to save your run!',
                   theme),
               const SizedBox(height: 12),
               _tutorialStep('4', '🏆 Score',
