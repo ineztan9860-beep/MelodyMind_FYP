@@ -102,7 +102,7 @@ class UserRepository {
     }
   }
 
-  /// Called after each game to atomically update all stats.
+  /// Called after each game to atomically update all stats and log session history.
   Future<void> updateGameStats({
     required String uid,
     required int scoreGained,
@@ -110,6 +110,7 @@ class UserRepository {
     required int correctAnswers,
     required int totalAnswers,
     required bool incrementStreak,
+    String? gameMode,
   }) async {
     try {
       final docRef = _firestore.collection('Users').doc(uid);
@@ -138,6 +139,19 @@ class UserRepository {
           'totalAnswers': newTotal,
           'gamesPlayed': currentGames + 1,
         });
+      });
+
+      // Log detailed session entry to Firestore Users/{uid}/gameHistory subcollection
+      double accuracy =
+          totalAnswers == 0 ? 0.0 : (correctAnswers / totalAnswers) * 100.0;
+      await docRef.collection('gameHistory').add({
+        'gameMode': gameMode ?? 'Music Challenge',
+        'score': scoreGained,
+        'xpGained': xpGained,
+        'correctAnswers': correctAnswers,
+        'totalAnswers': totalAnswers,
+        'accuracy': accuracy,
+        'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       debugPrint("Error updating game stats: $e");

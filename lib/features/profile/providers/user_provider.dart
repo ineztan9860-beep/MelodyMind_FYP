@@ -157,6 +157,7 @@ class UserProfileNotifier
     required int correctAnswers,
     required int totalAnswers,
     required bool incrementStreak,
+    String? gameMode,
   }) async {
     final user = ref.read(authStateProvider).value;
     if (user != null) {
@@ -167,6 +168,7 @@ class UserProfileNotifier
             correctAnswers: correctAnswers,
             totalAnswers: totalAnswers,
             incrementStreak: incrementStreak,
+            gameMode: gameMode,
           );
       await _loadProfile();
     }

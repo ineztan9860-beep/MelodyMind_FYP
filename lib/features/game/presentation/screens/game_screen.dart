@@ -102,6 +102,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
           correctAnswers: _correctAnswers,
           totalAnswers: _totalAnswers,
           incrementStreak: _correctAnswers > 0,
+          gameMode: 'Note Identification',
         );
     // Also save to high score board
     final playerName =

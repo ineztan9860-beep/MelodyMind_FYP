@@ -80,6 +80,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
           correctAnswers: _round - 1,
           totalAnswers: _round + 3 - _lives,
           incrementStreak: _round > 1,
+          gameMode: 'Sequence Memory',
         );
 
     if (mounted) {

@@ -148,6 +148,7 @@ class _RhythmChallengeScreenState
           correctAnswers: _correctTaps,
           totalAnswers: _totalTaps,
           incrementStreak: _correctTaps > 0,
+          gameMode: 'Rhythm Challenge',
         );
 
     if (mounted) {

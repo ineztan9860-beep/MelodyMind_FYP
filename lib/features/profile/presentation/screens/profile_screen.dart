@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_musical_game/features/profile/providers/user_provider.dart';
@@ -137,20 +138,70 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Game History',
             style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Games Played: ${profile.gamesPlayed}'),
-            const SizedBox(height: 8),
-            Text(
-                'Accuracy: ${profile.accuracy.toStringAsFixed(1)}%'),
-            const SizedBox(height: 8),
-            Text('Total Score: ${profile.totalScore}'),
-            const SizedBox(height: 8),
-            Text('Correct: ${profile.correctAnswers} / '
-                '${profile.totalAnswers} answers'),
-          ],
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Total Games Played: ${profile.gamesPlayed}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Overall Accuracy: ${profile.accuracy.toStringAsFixed(1)}%'),
+              Text('Total Score: ${profile.totalScore}'),
+              const Divider(height: 24),
+              const Text('Recent Session Logs:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              FutureBuilder<QuerySnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('Users')
+                    .doc(profile.uid)
+                    .collection('gameHistory')
+                    .orderBy('timestamp', descending: true)
+                    .limit(5)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                        child: Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('No game session logs recorded yet.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    );
+                  }
+                  final docs = snapshot.data!.docs;
+                  return Column(
+                    children: docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final mode = data['gameMode'] ?? 'Music Game';
+                      final score = data['score'] ?? 0;
+                      final acc = (data['accuracy'] as num?)?.toDouble() ?? 0.0;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(mode,
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('+$score pts (${acc.round()}%)',
+                                style: const TextStyle(
+                                    fontSize: 12, color: Color(0xFF10B981))),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
