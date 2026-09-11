@@ -96,12 +96,22 @@ class _RhythmChallengeScreenState
   }
 
   void _generateSequence() {
-    if (_difficulty == 'Hard') {
+    if (_difficulty == 'Medium') {
+      // Medium: randomly selected song in correct note order
       final songIndex = _random.nextInt(_songSequences.length);
       final song = _songSequences[songIndex];
       _currentSongTitle = song['title'] as String;
       _sequence = List<String>.from(song['notes'] as List);
+    } else if (_difficulty == 'Hard') {
+      // Hard: randomly selected song but notes are shuffled — pure ear training
+      final songIndex = _random.nextInt(_songSequences.length);
+      final song = _songSequences[songIndex];
+      _currentSongTitle = song['title'] as String;
+      final shuffled = List<String>.from(song['notes'] as List);
+      shuffled.shuffle(_random);
+      _sequence = shuffled;
     } else {
+      // Easy: random 10-note sequence from natural notes, no key labels
       _currentSongTitle = null;
       _sequence = List.generate(10, (i) {
         return _naturalNotes[_random.nextInt(_naturalNotes.length)];
@@ -148,10 +158,6 @@ class _RhythmChallengeScreenState
     });
   }
 
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => _feedback = '');
-    });
-  }
 
   Future<void> _endGame() async {
     setState(() => _isGameOver = true);
@@ -269,7 +275,7 @@ class _RhythmChallengeScreenState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ChoiceChip(
-                      label: const Text('Easy Mode (Labels)'),
+                      label: const Text('Easy'),
                       selected: _difficulty == 'Easy',
                       onSelected: (selected) {
                         if (selected) {
@@ -289,7 +295,7 @@ class _RhythmChallengeScreenState
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('Medium Mode (No Labels)'),
+                      label: const Text('Medium (Songs)'),
                       selected: _difficulty == 'Medium',
                       onSelected: (selected) {
                         if (selected) {
@@ -309,7 +315,7 @@ class _RhythmChallengeScreenState
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
-                      label: const Text('Hard Mode (Songs)'),
+                      label: const Text('Hard (Songs Shuffled)'),
                       selected: _difficulty == 'Hard',
                       onSelected: (selected) {
                         if (selected) {
@@ -348,9 +354,11 @@ class _RhythmChallengeScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _currentSongTitle != null
-                          ? 'Song: $_currentSongTitle — tap in order:'
-                          : 'Target Sequence — tap in order:',
+                      _difficulty == 'Hard' && _currentSongTitle != null
+                          ? 'Challenge: $_currentSongTitle (Shuffled) — tap in order:'
+                          : _currentSongTitle != null
+                              ? 'Song: $_currentSongTitle — tap in order:'
+                              : 'Target Sequence — tap in order:',
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
@@ -646,28 +654,7 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: difficulty == 'Easy'
-                        ? Center(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  note,
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? Colors.white
-                                        : (isDark
-                                            ? const Color(0xFF1F2937)
-                                            : const Color(0xFF64748B)),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
+                    child: null,
                   ),
                 );
               }).toList(),
@@ -705,26 +692,7 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: difficulty == 'Easy'
-                        ? Center(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Text(
-                                  note,
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? Colors.white
-                                        : Colors.white70,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
+                    child: null,
                   ),
                 ),
               );

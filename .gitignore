@@ -60,7 +60,6 @@ generate_flowchart_pngs.js
 # Firebase & Secret Configuration Files
 **/google-services*.json
 **/GoogleService-Info.plist
-**/firebase_options.dart
 *.env
 *.keystore
 *.jks

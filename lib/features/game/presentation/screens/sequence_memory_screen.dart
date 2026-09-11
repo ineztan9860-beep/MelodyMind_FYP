@@ -13,11 +13,14 @@ class SequenceMemoryScreen extends ConsumerStatefulWidget {
 }
 
 class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
+  static const int _targetRounds = 10;
+
   int _localScore = 0;
   int _round = 1;
   int _lives = 3;
   bool _isUsersTurn = false;
   bool _isGameOver = false;
+  bool _isLevelComplete = false;
   bool _showTutorial = true; // Show tutorial on first launch
   final List<String> _targetSequence = [];
   List<String> _userSequence = [];
@@ -69,24 +72,28 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
     if (mounted) setState(() => _isUsersTurn = true);
   }
 
-  Future<void> _finishGame() async {
-    setState(() => _isGameOver = true);
-    double acc = (_round / (_round + 3 - _lives)) * 100;
+  Future<void> _finishGame({bool levelComplete = false}) async {
+    setState(() {
+      _isGameOver = !levelComplete;
+      _isLevelComplete = levelComplete;
+    });
+    final completedRounds = _round - 1;
+    double acc = completedRounds == 0 ? 0.0 : (completedRounds / _targetRounds) * 100;
     int xp = _localScore ~/ 10;
 
     await ref.read(userProfileNotifierProvider.notifier).saveGameResult(
           scoreGained: _localScore,
           xpGained: xp,
-          correctAnswers: _round - 1,
-          totalAnswers: _round + 3 - _lives,
-          incrementStreak: _round > 1,
+          correctAnswers: completedRounds,
+          totalAnswers: _targetRounds,
+          incrementStreak: completedRounds > 0,
           gameMode: 'Sequence Memory',
         );
 
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/results', arguments: {
         'score': _localScore,
-        'accuracy': acc,
+        'accuracy': acc.clamp(0.0, 100.0),
         'xpGained': xp,
       });
     }
@@ -117,7 +124,12 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
         _localScore += 500 * _round;
         _round++;
       });
-      _startNewRound();
+      if (_round > _targetRounds) {
+        // All rounds completed — level complete!
+        _finishGame(levelComplete: true);
+      } else {
+        _startNewRound();
+      }
     }
   }
 
@@ -288,10 +300,10 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                             Text('Round',
                                 style: theme.textTheme.bodyMedium
                                     ?.copyWith(fontSize: 11)),
-                            Text('$_round',
+                            Text('${_round.clamp(1, _targetRounds)}/$_targetRounds',
                                 style: theme.textTheme.headlineLarge
                                     ?.copyWith(
-                                        fontSize: 28,
+                                        fontSize: 24,
                                         color: const Color(0xFF8B5CF6))),
                           ],
                         ),
@@ -299,30 +311,17 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ),
                   ),
 
-                  if (_isGameOver) ...[
-                    const SizedBox(height: 40),
-                    const Text('GAME OVER!',
-                        style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold)),
-                    Text('You reached Round $_round',
-                        style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isGameOver = false;
-                          _localScore = 0;
-                          _round = 1;
-                          _lives = 3;
-                          _targetSequence.clear();
-                        });
-                        _startNewRound();
-                      },
-                      child: const Text('Try Again'),
-                    )
-                  ],
+                  // Progress bar below score card
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: ((_round - 1) / _targetRounds).clamp(0.0, 1.0),
+                      minHeight: 6,
+                      backgroundColor: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF8B5CF6)),
+                    ),
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -463,11 +462,11 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  if (!_isGameOver)
+                  if (!_isGameOver && !_isLevelComplete)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _finishGame,
+                        onPressed: () => _finishGame(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B5CF6),
                           foregroundColor: Colors.white,
@@ -486,6 +485,125 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
 
             // ── Tutorial overlay ─────────────────────────────────────────
             if (_showTutorial) _buildTutorial(context, theme, isDark),
+
+            // ── Game Over / Level Complete overlay ───────────────────────
+            if (_isGameOver || _isLevelComplete)
+              Container(
+                color: Colors.black.withValues(alpha: 0.82),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(28),
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: (_isLevelComplete
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFFEF4444))
+                            .withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isLevelComplete
+                              ? Icons.emoji_events
+                              : Icons.sentiment_very_dissatisfied,
+                          size: 64,
+                          color: _isLevelComplete
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFFEF4444),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isLevelComplete ? 'Level Complete! 🎉' : 'Game Over',
+                          style: theme.textTheme.headlineLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _isLevelComplete
+                              ? 'You completed all $_targetRounds rounds!'
+                              : 'You reached Round ${_round - 1}',
+                          style: theme.textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Score: $_localScore  •  XP: +${_localScore ~/ 10}',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF8B5CF6),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.all(14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () =>
+                                Navigator.pushReplacementNamed(
+                              context,
+                              '/results',
+                              arguments: {
+                                'score': _localScore,
+                                'accuracy': ((_round - 1) / _targetRounds * 100)
+                                    .clamp(0.0, 100.0),
+                                'xpGained': _localScore ~/ 10,
+                              },
+                            ),
+                            child: const Text('See Full Results',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF8B5CF6),
+                              side: const BorderSide(
+                                  color: Color(0xFF8B5CF6)),
+                              padding: const EdgeInsets.all(12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isGameOver = false;
+                                _isLevelComplete = false;
+                                _localScore = 0;
+                                _round = 1;
+                                _lives = 3;
+                                _targetSequence.clear();
+                                _userSequence.clear();
+                              });
+                              _startNewRound();
+                            },
+                            child: const Text('Play Again',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        TextButton(
+                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                              context, '/home', (_) => false),
+                          child: const Text('Back to Home',
+                              style:
+                                  TextStyle(color: Color(0xFF64748B))),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -524,8 +642,8 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                   'When "YOUR TURN" appears, tap the tiles in the EXACT same order.',
                   theme),
               const SizedBox(height: 12),
-              _tutorialStep('3', '❤️ Lives & Ending',
-                  'You have 3 lives. Lose all 3 to end, or tap "Finish & Save Score" anytime to save your run!',
+              _tutorialStep('3', '❤️ Lives & Goal',
+                  'Complete $_targetRounds rounds to win! You have 3 lives — a wrong tap costs a life. Lose all 3 and the game ends.',
                   theme),
               const SizedBox(height: 12),
               _tutorialStep('4', '🏆 Score',

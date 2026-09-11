@@ -161,6 +161,13 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
         if (_lives == 0) {
           _isGameOver = true;
           _saveGameResults();
+        } else {
+          // Auto advance to next question after showing wrong-answer feedback
+          Future.delayed(const Duration(milliseconds: 1200), () {
+            if (mounted && _selectedNote != null && !_isGameOver && !_isLevelComplete) {
+              _pickRandomNote();
+            }
+          });
         }
       }
     });
