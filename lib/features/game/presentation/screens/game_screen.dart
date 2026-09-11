@@ -16,6 +16,7 @@ class GameplayScreen extends ConsumerStatefulWidget {
 class GameScreenState extends ConsumerState<GameplayScreen> {
   int _score = 0;
   int _lives = 3;
+  int _maxLives = 3;
   int _streak = 0;
   int _multiplier = 1;
   double _progress = 0.0;
@@ -43,10 +44,13 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   void _initializeDifficulties() {
     if (widget.difficulty == 'Hard') {
       _lives = 1;
+      _maxLives = 1;
     } else if (widget.difficulty == 'Medium') {
       _lives = 3;
+      _maxLives = 3;
     } else {
       _lives = 5;
+      _maxLives = 5;
     }
   }
 
@@ -140,6 +144,13 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
         if (_correctAnswers >= _targetQuestions || _progress >= 1.0) {
           _isLevelComplete = true;
           _saveGameResults();
+        } else {
+          // Auto advance to next question smoothly after brief delay
+          Future.delayed(const Duration(milliseconds: 900), () {
+            if (mounted && _selectedNote != null && !_isGameOver && !_isLevelComplete) {
+              _pickRandomNote();
+            }
+          });
         }
       } else {
         _streak = 0;
@@ -239,48 +250,83 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 8),
-                  // Lives row
+                  const SizedBox(height: 12),
+                  // Lives and Goal Stats Row
                   Row(
-                    children: List.generate(
-                      5,
-                      (i) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Icon(
-                          i < _lives
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: i < _lives
-                              ? const Color(0xFFEF4444)
-                              : theme.dividerColor,
-                          size: 18,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: const Color(0xFFEF4444)
+                                  .withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shield_outlined,
+                                size: 14, color: Color(0xFFEF4444)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Lives: $_lives/$_maxLives',
+                              style: const TextStyle(
+                                color: Color(0xFFEF4444),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22D3EE).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: const Color(0xFF22D3EE)
+                                  .withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          'Goal: $_correctAnswers/$_targetQuestions Notes',
+                          style: TextStyle(
+                            color: isDark
+                                ? const Color(0xFF22D3EE)
+                                : const Color(0xFF0284C7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   // Progress Bar
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Stack(
                     children: [
                       Container(
-                        height: 8,
+                        height: 6,
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFF22D3EE)
-                                  .withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
+                              ? Colors.white12
+                              : const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       ),
                       FractionallySizedBox(
                         widthFactor: _progress,
                         child: Container(
-                          height: 8,
+                          height: 6,
                           decoration: BoxDecoration(
                             color: const Color(0xFF22D3EE),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),
@@ -467,7 +513,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _isLevelComplete ? 'Level Complete! 🎉' : 'Game Over',
+                          _isLevelComplete ? 'Level Complete!' : 'Game Over',
                           style: theme.textTheme.headlineLarge,
                           textAlign: TextAlign.center,
                         ),

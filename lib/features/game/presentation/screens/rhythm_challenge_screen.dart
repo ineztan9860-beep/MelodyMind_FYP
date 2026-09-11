@@ -4,10 +4,13 @@ import 'package:interactive_musical_game/core/providers/audio_provider.dart';
 import 'package:interactive_musical_game/features/profile/providers/user_provider.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 
+import 'dart:math';
+
 /// Piano-keyboard rhythm challenge.
 /// The player taps the correct piano keys to match each note in the sequence.
-/// Keys show NO labels by default (Hard mode) — only the next expected note
-/// glows with a subtle hint after a wrong tap.
+/// Easy mode: Keys show note labels.
+/// Medium mode: Keys show no labels (ear/position training).
+/// Hard mode: Plays randomized recognizable songs.
 class RhythmChallengeScreen extends ConsumerStatefulWidget {
   const RhythmChallengeScreen({super.key});
 
@@ -19,6 +22,7 @@ class RhythmChallengeScreen extends ConsumerStatefulWidget {
 class _RhythmChallengeScreenState
     extends ConsumerState<RhythmChallengeScreen> {
   final List<String> _naturalNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  final Random _random = Random();
 
   static const List<Map<String, dynamic>> _songSequences = [
     {
@@ -44,6 +48,14 @@ class _RhythmChallengeScreenState
     {
       'title': 'Happy Birthday',
       'notes': ['C', 'C', 'D', 'C', 'F', 'E', 'C', 'C', 'D', 'C', 'G', 'F'],
+    },
+    {
+      'title': 'Old MacDonald',
+      'notes': ['C', 'C', 'C', 'G', 'A', 'A', 'G', 'E', 'E', 'D', 'D', 'C'],
+    },
+    {
+      'title': 'Frere Jacques',
+      'notes': ['C', 'D', 'E', 'C', 'C', 'D', 'E', 'C', 'E', 'F', 'G', 'E', 'F', 'G'],
     },
   ];
 
@@ -85,16 +97,14 @@ class _RhythmChallengeScreenState
 
   void _generateSequence() {
     if (_difficulty == 'Hard') {
-      final rng = DateTime.now().millisecondsSinceEpoch;
-      final songIndex = rng % _songSequences.length;
+      final songIndex = _random.nextInt(_songSequences.length);
       final song = _songSequences[songIndex];
       _currentSongTitle = song['title'] as String;
       _sequence = List<String>.from(song['notes'] as List);
     } else {
       _currentSongTitle = null;
-      final rng = DateTime.now().millisecondsSinceEpoch;
       _sequence = List.generate(10, (i) {
-        return _naturalNotes[(rng + i * 37) % _naturalNotes.length];
+        return _naturalNotes[_random.nextInt(_naturalNotes.length)];
       });
     }
     _currentIndex = 0;
@@ -123,7 +133,7 @@ class _RhythmChallengeScreenState
         if (_currentIndex >= _sequence.length) {
           _score += 500; // bonus for completing sequence
           _generateSequence();
-          _feedback = '🎉 Sequence Complete! +500 Bonus';
+          _feedback = 'Sequence Complete! +500 Bonus';
         }
       } else {
         _feedback = 'Wrong key! Try again';
@@ -132,6 +142,11 @@ class _RhythmChallengeScreenState
         _currentIndex = 0; // reset to start of sequence
       }
     });
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _feedback = '');
+    });
+  }
 
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => _feedback = '');
@@ -334,7 +349,7 @@ class _RhythmChallengeScreenState
                   children: [
                     Text(
                       _currentSongTitle != null
-                          ? '🎵 Song: $_currentSongTitle — tap in order:'
+                          ? 'Song: $_currentSongTitle — tap in order:'
                           : 'Target Sequence — tap in order:',
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w600),
