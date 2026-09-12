@@ -216,17 +216,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   onPressed: _isLoading ? null : () async {
                     setState(() => _isLoading = true);
                     final navigator = Navigator.of(context);
-                    final messenger = ScaffoldMessenger.of(context);
-                    final success = await ref.read(authControllerProvider.notifier).signInAnonymously();
+                    await ref.read(authControllerProvider.notifier).signInAnonymously();
                     if (!context.mounted) return;
                     setState(() => _isLoading = false);
-                    if (success) {
-                      navigator.pushReplacementNamed('/splash', arguments: {'isPostAuth': true});
-                    } else {
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Failed to sign in as guest')),
-                      );
-                    }
+                    navigator.pushReplacementNamed('/splash', arguments: {'isPostAuth': true});
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.secondary,
