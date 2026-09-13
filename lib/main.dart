@@ -39,11 +39,43 @@ void main() async {
 }
 
 
-class MelodyMindApp extends ConsumerWidget {
+class MelodyMindApp extends ConsumerStatefulWidget {
   const MelodyMindApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MelodyMindApp> createState() => _MelodyMindAppState();
+}
+
+class _MelodyMindAppState extends ConsumerState<MelodyMindApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final audio = ref.read(audioServiceProvider);
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      audio.pauseBackgroundMusic();
+    } else if (state == AppLifecycleState.resumed) {
+      audio.resumeBackgroundMusic();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final isDark = settings.isDarkMode;
     

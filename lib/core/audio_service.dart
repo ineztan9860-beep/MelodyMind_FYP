@@ -10,6 +10,7 @@ class AudioService {
   final AudioPlayer _bgmPlayer = AudioPlayer();
 
   bool isSoundEnabled = true;
+  bool _bgmShouldPlay = false;
 
   AudioService() {
     _bgmPlayer.setReleaseMode(ReleaseMode.loop);
@@ -56,22 +57,43 @@ class AudioService {
   }
 
   Future<void> playBackgroundMusic() async {
+    _bgmShouldPlay = true;
     if (!isSoundEnabled) {
       await stopBackgroundMusic();
       return;
     }
     try {
-      if (kDebugMode) print('🔊 AudioService: Starting Background Music');
+      if (kDebugMode) print('🔊 AudioService: Starting Background Music (Volume 0.08)');
       await _bgmPlayer.play(
           AssetSource(
               'audio/melancholic-piano-loop_89bpm_Csharp_major.wav'),
-          volume: 0.2);
+          volume: 0.08); // Reduced to gentle ambient level
     } catch (e) {
       if (kDebugMode) print('❌ AudioService: Error playing BGM: $e');
     }
   }
 
+  Future<void> pauseBackgroundMusic() async {
+    try {
+      if (kDebugMode) print('🔊 AudioService: Pausing Background Music on background/minimize');
+      await _bgmPlayer.pause();
+    } catch (e) {
+      if (kDebugMode) print('❌ AudioService: Error pausing BGM: $e');
+    }
+  }
+
+  Future<void> resumeBackgroundMusic() async {
+    if (!isSoundEnabled || !_bgmShouldPlay) return;
+    try {
+      if (kDebugMode) print('🔊 AudioService: Resuming Background Music on app restore');
+      await _bgmPlayer.resume();
+    } catch (e) {
+      await playBackgroundMusic();
+    }
+  }
+
   Future<void> stopBackgroundMusic() async {
+    _bgmShouldPlay = false;
     await _bgmPlayer.stop();
   }
 

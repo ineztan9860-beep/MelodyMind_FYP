@@ -1,7 +1,7 @@
 name: interactive_musical_game
 description: "Interactive Musical Game App for EEE Final Year Project."
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.2+3
 environment:
   sdk: '>=3.2.0 <4.0.0'
 dependencies:
@@ -24,9 +24,13 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.1
 
 flutter_launcher_icons:
-  android: "ic_launcher"
+  android: true
   ios: true
   image_path: "assets/images/logo.png"
+  adaptive_icon_background: "transparent"
+  adaptive_icon_foreground: "assets/images/logo.png"
+  min_sdk_android: 21
+  remove_alpha_ios_image: true
 
 flutter:
   uses-material-design: true
