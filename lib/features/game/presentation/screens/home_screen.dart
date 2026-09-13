@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_musical_game/features/profile/providers/user_provider.dart';
+import 'package:interactive_musical_game/features/auth/providers/auth_provider.dart';
 import 'package:interactive_musical_game/core/providers/nav_provider.dart';
 import 'mode_selection_screen.dart';
 
@@ -39,14 +40,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.dispose();
   }
 
+  String _resolveUserName(UserProfile? profile, dynamic authUser) {
+    final bool isGuest = (profile?.isGuest ?? false) || (authUser?.isAnonymous ?? false);
+    if (isGuest) {
+      return 'Guest';
+    }
+
+    String? name = profile?.name;
+    if (name == null || name.trim().isEmpty || name.trim().toLowerCase() == 'guest') {
+      name = authUser?.displayName;
+    }
+    if (name == null || name.trim().isEmpty) {
+      if (authUser?.email != null && (authUser.email as String).isNotEmpty) {
+        name = (authUser.email as String).split('@').first;
+      }
+    }
+
+    if (name == null || name.trim().isEmpty || name.trim().toLowerCase() == 'guest') {
+      return 'Guest';
+    }
+
+    name = name.trim();
+    if (name.contains('@')) {
+      name = name.split('@').first;
+    }
+
+    // Capitalize first letter cleanly
+    if (name.isNotEmpty) {
+      name = name[0].toUpperCase() + name.substring(1);
+    }
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProfileAsync = ref.watch(userProfileNotifierProvider);
+    final authUser = ref.watch(authStateProvider).value;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final profile = userProfileAsync.value;
-    final userName = profile?.name ?? 'Guest';
+    final userName = _resolveUserName(profile, authUser);
+    final isGuest = userName.toLowerCase() == 'guest';
     final level = profile?.level ?? 0;
     final totalScore = profile?.totalScore ?? 0;
     final streak = profile?.streak ?? 0;
@@ -119,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Welcome back,',
+                            Text(isGuest ? 'Welcome,' : 'Welcome back,',
                                 style: theme.textTheme.bodyMedium),
                             Text(
                               userName,
@@ -166,9 +201,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -200,8 +235,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -258,13 +294,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(4),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.4),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
                                 ),
                               ),
                             ),
