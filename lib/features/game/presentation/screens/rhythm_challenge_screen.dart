@@ -619,7 +619,7 @@ class _PianoKeyboard extends StatelessWidget {
         height: keyboardH,
         child: Stack(
           children: [
-            // White keys — NO labels (hard mode)
+            // White keys — show labels in Easy mode
             Row(
               children: _whiteNotes.map((note) {
                 final isActive = activePressedKey == note;
@@ -654,12 +654,31 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: null,
+                    child: difficulty == 'Easy'
+                        ? Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                note,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? Colors.white
+                                      : (isDark
+                                          ? const Color(0xFF1E293B)
+                                          : const Color(0xFF1E3A8A)),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
                 );
               }).toList(),
             ),
-            // Black keys — NO labels
+            // Black keys — show labels in Easy mode
             ..._blackNoteData.map((data) {
               final note = data['note'] as String;
               final pos = data['pos'] as int;
@@ -692,7 +711,24 @@ class _PianoKeyboard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: null,
+                    child: difficulty == 'Easy'
+                        ? Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                note,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? const Color(0xFF1E3A8A)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
                 ),
               );

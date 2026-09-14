@@ -99,6 +99,27 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
     _pickRandomNote();
   }
 
+  Future<void> _finishAndSave() async {
+    if (_isGameOver || _isLevelComplete) return;
+    setState(() => _isLevelComplete = true);
+    await _saveGameResults();
+    if (mounted) {
+      double acc = _totalAnswers == 0
+          ? 0.0
+          : (_correctAnswers / _totalAnswers) * 100;
+      int xp = _score ~/ 10;
+      Navigator.pushReplacementNamed(
+        context,
+        '/results',
+        arguments: {
+          'score': _score,
+          'accuracy': acc,
+          'xpGained': xp,
+        },
+      );
+    }
+  }
+
   Future<void> _saveGameResults() async {
     await ref.read(userProfileNotifierProvider.notifier).saveGameResult(
           scoreGained: _score,
@@ -469,7 +490,7 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  // NEXT BUTTON
+                  // FINISH & SAVE BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -481,10 +502,10 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: (_selectedNote != null && !_isLevelComplete && !_isGameOver)
-                          ? _pickRandomNote
+                      onPressed: (!_isLevelComplete && !_isGameOver)
+                          ? _finishAndSave
                           : null,
-                      child: const Text('Next Question',
+                      child: const Text('Finish & Save Score',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.bold)),
                     ),
