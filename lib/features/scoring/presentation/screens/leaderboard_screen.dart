@@ -9,7 +9,7 @@ import 'package:interactive_musical_game/features/profile/data/user_repository.d
 // ─── Real-time leaderboard provider ───────────────────────────────────────────
 final leaderboardStreamProvider =
     StreamProvider<List<Map<String, dynamic>>>((ref) {
-  return UserRepository().getLeaderboardStream(limit: 20);
+  return UserRepository().getLeaderboardStream(limit: 8);
 });
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
