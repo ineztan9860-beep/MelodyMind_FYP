@@ -99331,25 +99331,27 @@ A.c_(r,$.dP(),!0)
 return new A.of(A.b47(new A.cQ(r)))},
 $S:639}
 A.of.prototype={
-dV(){var s=0,r=A.r(t.op),q,p=2,o=[],n=this,m,l,k,j
+dV(){var s=0,r=A.r(t.op),q,p=2,o=[],n=this,m,l,k,j,i
 var $async$dV=A.n(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
 s=7
 return A.l(n.a.dV(),$async$dV)
 case 7:m=b
-l=m.gG1()
-q=l
+k=m.gG1()
+q=k
 s=1
 break
 p=2
 s=6
 break
 case 4:p=3
-j=o.pop()
-if(A.V(j) instanceof A.lc){A.hh().$1("Failed to sign in anonymously")
+i=o.pop()
+k=A.V(i)
+if(k instanceof A.lc){A.hh().$1("Failed to sign in anonymously")
 q=null
 s=1
-break}else{A.hh().$1("Firebase not configured properly: $e")
+break}else{l=k
+A.hh().$1("Firebase not configured properly: "+A.j(l))
 q=null
 s=1
 break}s=6
@@ -99437,7 +99439,7 @@ break
 case 5:return A.p(null,r)
 case 1:return A.o(p.at(-1),r)}})
 return A.q($async$m9,r)},
-e4(){var s=0,r=A.r(t.H),q=1,p=[],o=this,n,m
+e4(){var s=0,r=A.r(t.H),q=1,p=[],o=this,n,m,l
 var $async$e4=A.n(function(a,b){if(a===1){p.push(b)
 s=q}for(;;)switch(s){case 0:q=3
 s=6
@@ -99446,8 +99448,9 @@ case 6:q=1
 s=5
 break
 case 3:q=2
-m=p.pop()
-A.hh().$1("Sign out failed: $e")
+l=p.pop()
+n=A.V(l)
+A.hh().$1("Sign out failed: "+A.j(n))
 s=5
 break
 case 2:s=1
