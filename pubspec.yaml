@@ -1,0 +1,41 @@
+
+name: interactive_musical_game
+description: "Interactive Musical Game App for EEE Final Year Project."
+publish_to: 'none'
+version: 1.0.3+4
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  audioplayers: ^6.0.0
+  flutter_riverpod: ^2.6.1
+  firebase_core: ^4.0.0
+  firebase_auth: ^6.0.0
+  cloud_firestore: ^6.0.0
+  percent_indicator: ^4.2.3
+  shared_preferences: ^2.3.0
+  image_picker: ^1.1.0
+  path_provider: ^2.1.2
+  web: ^1.1.1
+  share_plus: ^10.0.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#E0E5EB"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/
+    - assets/images/
