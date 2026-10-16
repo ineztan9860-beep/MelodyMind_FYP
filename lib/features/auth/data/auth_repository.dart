@@ -23,7 +23,7 @@ class AuthRepository {
       debugPrint("Failed to sign in anonymously");
       return null;
     } catch (e) {
-      debugPrint("Firebase not configured properly: \$e");
+      debugPrint("Firebase not configured properly: $e");
       return null;
     }
   }
@@ -69,7 +69,7 @@ class AuthRepository {
     try {
       await _auth.signOut();
     } catch (e) {
-      debugPrint("Sign out failed: \$e");
+      debugPrint("Sign out failed: $e");
     }
   }
 }
