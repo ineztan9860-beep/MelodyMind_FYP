@@ -4,14 +4,6 @@
 
 MelodyMind helps beginners build core musical skills (recognising notes, remembering melodies and keeping a steady beat) through three short games with Easy, Medium and Hard levels, scores, streaks and a leaderboard.
 
-| | |
-|---|---|
-| 🌐 **Play on the web** | https://melodymindfyp.web.app |
-| 📱 **Android APK** | [Download from Releases](../../releases/latest) |
-| 🍎 **iPhone** | Open the web link in Safari → Share → **Add to Home Screen** (turn off Silent Mode to hear the notes) |
-
----
-
 ## Games
 
 ### 🎼 Note Identification
@@ -40,28 +32,6 @@ Play melodies on an on-screen piano.
 - **Firebase Hosting:** web version at `melodymindfyp.web.app`
 - **Riverpod:** state management
 - **audioplayers:** low-latency note, metronome and music playback
-
----
-
-## Project structure
-
-```
-lib/
-├── core/            # Audio service and shared providers
-├── features/
-│   ├── auth/        # Sign-in, sign-up, guest mode
-│   ├── game/        # The three games, song data, staff drawing
-│   ├── profile/     # User profile and settings
-│   └── scoring/     # Results, analytics, leaderboard
-├── shared/          # Shared widgets (navigation bar, etc.)
-└── main.dart        # App entry point and routes
-assets/
-├── audio/           # Piano notes (C4–B4), metronome ticks, effects, music
-└── images/          # Logo and app icons
-test/                # Unit and widget tests
-```
-
----
 
 ## Getting started
 
