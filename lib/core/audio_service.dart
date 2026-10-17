@@ -19,6 +19,10 @@ class AudioService {
   bool isSoundEnabled = true;
   bool _bgmShouldPlay = false;
 
+  /// How many game screens are open. While a game is open the background
+  /// music is paused, because the games are about listening to notes.
+  int _gameScreensOpen = 0;
+
   /// Lets every sound in the app play at the same time. By default each
   /// Android player requests "audio focus", so starting one sound (e.g. a
   /// metronome tick) stops whichever sound was already playing (e.g. a
@@ -112,18 +116,32 @@ class AudioService {
     }
   }
 
+  /// Call when a game screen opens: pauses the background music so the
+  /// player can hear the game's notes clearly.
+  void enterGame() {
+    _gameScreensOpen++;
+    _bgmPlayer.pause().ignore();
+  }
+
+  /// Call when a game screen closes: brings the background music back.
+  void exitGame() {
+    if (_gameScreensOpen > 0) _gameScreensOpen--;
+    if (_gameScreensOpen == 0) resumeBackgroundMusic();
+  }
+
   Future<void> playBackgroundMusic() async {
     _bgmShouldPlay = true;
     if (!isSoundEnabled) {
       await stopBackgroundMusic();
       return;
     }
+    if (_gameScreensOpen > 0) return; // stays quiet during games
     try {
-      if (kDebugMode) print('🔊 AudioService: Starting Background Music (Volume 0.08)');
-      await _bgmPlayer.play(
-          AssetSource(
-              'audio/melancholic-piano-loop_89bpm_Csharp_major.wav'),
-          volume: 0.08); // Reduced to gentle ambient level
+      if (kDebugMode) print('🔊 AudioService: Starting Background Music');
+      // The quietness is built into the file itself (bgm_soft.wav is the
+      // original loop at 8% level). Safari on iPhone ignores the volume
+      // setting, so a quiet file keeps the music soft on every device.
+      await _bgmPlayer.play(AssetSource('audio/bgm_soft.wav'), volume: 1.0);
     } catch (e) {
       if (kDebugMode) print('❌ AudioService: Error playing BGM: $e');
     }
@@ -140,6 +158,7 @@ class AudioService {
 
   Future<void> resumeBackgroundMusic() async {
     if (!isSoundEnabled || !_bgmShouldPlay) return;
+    if (_gameScreensOpen > 0) return; // stays quiet during games
     try {
       if (kDebugMode) print('🔊 AudioService: Resuming Background Music on app restore');
       await _bgmPlayer.resume();

@@ -88,14 +88,19 @@ class _RhythmChallengeScreenState
   bool get _isHard => _difficulty == 'Hard';
   String? get _currentSongTitle => _currentSong?.title;
 
+  // Kept so it can still be used in dispose()
+  late final _audio = ref.read(audioServiceProvider);
+
   @override
   void initState() {
     super.initState();
+    _audio.enterGame(); // pause background music during the game
     _generateSequence();
   }
 
   @override
   void dispose() {
+    _audio.exitGame(); // bring background music back
     _loop?.cancel();
     super.dispose();
   }
