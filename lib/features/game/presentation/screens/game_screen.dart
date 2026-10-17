@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/treble_clef.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:interactive_musical_game/features/scoring/data/high_score_repository.dart';
 import '../../../profile/providers/user_provider.dart';
@@ -52,6 +53,11 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   int _correctAnswers = 0;
   int _totalAnswers = 0;
   bool _canAdvanceToNext = false;
+
+  // "How to read the staff" tutorial, shown before the first question
+  bool _tutorialOpen = true;
+  int _tutorialPage = 0;
+  static const int _tutorialPageCount = 4;
 
   @override
   void initState() {
@@ -109,10 +115,24 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
     });
 
     Future.microtask(() {
-      if (mounted) {
+      // Wait until the tutorial is closed before playing the first note
+      if (mounted && !_tutorialOpen) {
         ref.read(audioServiceProvider).playNote(_targetNote);
       }
     });
+  }
+
+  void _openTutorial() {
+    setState(() {
+      _tutorialOpen = true;
+      _tutorialPage = 0;
+    });
+  }
+
+  void _closeTutorial() {
+    setState(() => _tutorialOpen = false);
+    // Play the current question's note now that the game is visible
+    ref.read(audioServiceProvider).playNote(_targetNote);
   }
 
   void _replayPitch() {
@@ -475,9 +495,20 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  Text(
-                    'Identify the Note',
-                    style: theme.textTheme.headlineMedium,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Identify the Note',
+                        style: theme.textTheme.headlineMedium,
+                      ),
+                      IconButton(
+                        tooltip: 'How to read the staff',
+                        onPressed: _openTutorial,
+                        icon: const Icon(Icons.help_outline,
+                            color: Color(0xFF22D3EE)),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -843,11 +874,309 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
                   ),
                 ),
               ),
+
+            // ── How to read the staff tutorial ───────────────────────────
+            if (_tutorialOpen) _buildStaffTutorial(theme, isDark),
           ],
         ),
       ),
       bottomNavigationBar: const AppBottomNav(),
     );
+  }
+
+  // ── Staff tutorial ────────────────────────────────────────────────────
+
+  static const Color _lineColor = Color(0xFF3B82F6);
+  static const Color _spaceColor = Color(0xFFF59E0B);
+  static const Color _accent = Color(0xFF22D3EE);
+
+  Widget _buildStaffTutorial(ThemeData theme, bool isDark) {
+    final ink = isDark ? const Color(0xFF22D3EE) : const Color(0xFF1E3A8A);
+    late final String title;
+    late final Widget diagram;
+    late final List<Widget> body;
+
+    switch (_tutorialPage) {
+      case 0:
+        title = 'Meet the Treble Clef';
+        diagram = _tutorialDiagram(isDark, const [], highlightGLine: true);
+        body = [
+          _tutorialText(
+              'Notes are written on a staff of 5 lines. The symbol on the left is the treble clef. Its curl wraps around the 2nd line from the bottom, which is the note G, so it is also called the G clef.',
+              theme),
+          _tutorialText(
+              'The clef tells you which note each line and space stands for. Lower music uses the bass clef instead, but every note in this game uses the treble clef.',
+              theme),
+        ];
+        break;
+      case 1:
+        title = 'Lines and Spaces';
+        diagram = _tutorialDiagram(isDark, const [
+          TutorialNote('E', 8, _lineColor),
+          TutorialNote('F', 7, _spaceColor),
+          TutorialNote('G', 6, _lineColor),
+          TutorialNote('A', 5, _spaceColor),
+          TutorialNote('B', 4, _lineColor),
+          TutorialNote('C', 3, _spaceColor),
+          TutorialNote('D', 2, _lineColor),
+          TutorialNote('E', 1, _spaceColor),
+          TutorialNote('F', 0, _lineColor),
+        ]);
+        body = [
+          _tutorialKey('Lines', 'E  G  B  D  F', '"Every Good Boy Does Fine"',
+              _lineColor, theme),
+          const SizedBox(height: 8),
+          _tutorialKey('Spaces', 'F  A  C  E', 'spells the word "FACE"',
+              _spaceColor, theme),
+          const SizedBox(height: 8),
+          _tutorialText(
+              'Going up one step, from a line to the next space, moves up one letter.',
+              theme),
+        ];
+        break;
+      case 2:
+        title = 'Notes in This Game';
+        diagram = _tutorialDiagram(isDark, [
+          TutorialNote('C', 10, ink),
+          TutorialNote('D', 9, ink),
+          TutorialNote('E', 8, ink),
+          TutorialNote('F', 7, ink),
+          TutorialNote('G', 6, ink),
+          TutorialNote('A', 5, ink),
+          TutorialNote('B', 4, ink),
+          TutorialNote('F♯', 7, ink, sharp: true),
+        ]);
+        body = [
+          _tutorialText(
+              'The game uses the notes from Middle C up to B. Middle C sits on its own short line below the staff, called a ledger line. D sits just under the bottom line.',
+              theme),
+          _tutorialText(
+              'A sharp sign ♯ raises a note by a half step. It sits on the same line or space as the plain note, so F♯ is in the F space and C♯ is on the Middle C ledger line.',
+              theme),
+        ];
+        break;
+      default:
+        title = 'How to Play';
+        diagram = const SizedBox.shrink();
+        body = _howToPlaySteps(theme);
+    }
+
+    final bool isLast = _tutorialPage == _tutorialPageCount - 1;
+
+    return Container(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _accent.withValues(alpha: 0.5)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Skip
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _closeTutorial,
+                    child: const Text('Skip',
+                        style: TextStyle(color: Color(0xFF64748B))),
+                  ),
+                ),
+                Text(title,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium),
+                const SizedBox(height: 12),
+                diagram,
+                const SizedBox(height: 12),
+                ...body,
+                const SizedBox(height: 16),
+                // Page dots
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_tutorialPageCount, (i) {
+                    final on = i == _tutorialPage;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: on ? 18 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: on
+                            ? _accent
+                            : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (_tutorialPage > 0) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              setState(() => _tutorialPage--),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF64748B)),
+                            foregroundColor: const Color(0xFF64748B),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Back',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLast
+                            ? _closeTutorial
+                            : () => setState(() => _tutorialPage++),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(isLast ? "Let's Play!" : 'Next',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tutorialDiagram(bool isDark, List<TutorialNote> notes,
+      {bool highlightGLine = false}) {
+    return SizedBox(
+      height: 140,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: TutorialStaffPainter(
+          notes: notes,
+          isDark: isDark,
+          highlightGLine: highlightGLine,
+        ),
+      ),
+    );
+  }
+
+  Widget _tutorialText(String text, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(text, style: theme.textTheme.bodyMedium),
+    );
+  }
+
+  Widget _tutorialKey(String label, String letters, String memory,
+      Color color, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 56,
+            child: Text(label,
+                style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(letters,
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(fontSize: 15, letterSpacing: 1.5)),
+                Text(memory,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _howToPlaySteps(ThemeData theme) {
+    final String modeLine;
+    switch (_currentDifficulty) {
+      case 'Easy':
+        modeLine =
+            'Easy (Learn): the note is shown on the staff with its letter, so you can match the sound to its place.';
+        break;
+      case 'Medium':
+        modeLine =
+            'Medium (Practise): read the note from the staff and the sound. You have 2 tries for each note.';
+        break;
+      default:
+        modeLine =
+            'Hard (Test): the note is hidden, so use your ear only. You get 1 replay per note and 3 lives.';
+    }
+    Widget step(String n, String title, String desc) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E3A8A),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(n,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontSize: 13)),
+                    const SizedBox(height: 2),
+                    Text(desc, style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+    return [
+      step('1', '🎧 Listen', 'A note plays when each question starts. Tap Replay to hear it again.'),
+      step('2', '🎼 Look', 'Find where the note sits on the staff, using the lines and spaces you just learned.'),
+      step('3', '👆 Tap', 'Choose the matching note button below the staff.'),
+      step('4', '🎯 This mode', modeLine),
+      Text('Tap the ? next to "Identify the Note" any time to see this guide again.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+    ];
   }
 
   Widget _buildDifficultyChip(String mode, String label) {
@@ -981,20 +1310,38 @@ class StaffPainter extends CustomPainter {
     this.hideNote = false,
   });
 
+  static const double lineSpacing = 18;
+
   @override
   void paint(Canvas canvas, Size size) {
+    final Color inkColor =
+        isDark ? const Color(0xFF22D3EE) : const Color(0xFF1E3A8A);
     final linePaint = Paint()
-      ..color = isDark ? Colors.white24 : const Color(0xFFCBD5E1)
+      ..color = isDark ? Colors.white38 : const Color(0xFF94A3B8)
       ..strokeWidth = 1.5;
 
-    const double lineSpacing = 18;
-    final double startY = (size.height - (4 * lineSpacing)) / 2;
+    final double startY = (size.height - (4 * lineSpacing)) / 2; // top line
+    final double bottomY = startY + 4 * lineSpacing; // bottom line (E4)
 
     // Draw the 5 staff lines
     for (int i = 0; i < 5; i++) {
       double y = startY + (i * lineSpacing);
       canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
     }
+
+    // Treble clef on the left. Its curl wraps the G line
+    // (second line from the bottom), as on a real stave.
+    final double clefScale = lineSpacing / TrebleClef.unitsPerSpace;
+    canvas.save();
+    canvas.translate(4 - TrebleClef.minX * clefScale, bottomY);
+    canvas.scale(clefScale);
+    canvas.drawPath(
+      TrebleClef.path,
+      Paint()
+        ..color = isDark ? Colors.white70 : const Color(0xFF1E293B)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.restore();
 
     // In Hard mode (or ear training), note is hidden
     if (hideNote) {
@@ -1019,22 +1366,30 @@ class StaffPainter extends CustomPainter {
       return;
     }
 
-    final int pos = _getNotePosition(targetNote);
+    final int pos = staffPosition(targetNote);
     final double noteY = startY + (pos * (lineSpacing / 2));
     final double noteX = size.width / 2;
 
-    final notePaint = Paint()
-      ..color = isDark ? const Color(0xFF22D3EE) : const Color(0xFF1E3A8A)
-      ..style = PaintingStyle.fill;
+    // Ledger line for Middle C (one line below the stave)
+    if (pos >= 10) {
+      final double ledgerY = startY + 5 * lineSpacing;
+      canvas.drawLine(
+        Offset(noteX - 15, ledgerY),
+        Offset(noteX + 15, ledgerY),
+        Paint()
+          ..color = inkColor
+          ..strokeWidth = 1.8,
+      );
+    }
 
-    // Draw accidental '#' sign if sharp note
+    // Draw accidental sharp sign to the left of the note
     if (targetNote.contains('#')) {
       final sharpPainter = TextPainter(
         text: TextSpan(
           text: '♯',
           style: TextStyle(
-            color: isDark ? const Color(0xFF22D3EE) : const Color(0xFF1E3A8A),
-            fontSize: 22,
+            color: inkColor,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1042,45 +1397,61 @@ class StaffPainter extends CustomPainter {
       )..layout();
       sharpPainter.paint(
         canvas,
-        Offset(noteX - 22, noteY - (sharpPainter.height / 2)),
+        Offset(noteX - 14 - sharpPainter.width,
+            noteY - (sharpPainter.height / 2)),
       );
     }
 
     // Draw notehead
+    final notePaint = Paint()
+      ..color = inkColor
+      ..style = PaintingStyle.fill;
     canvas.save();
     canvas.translate(noteX, noteY);
-    canvas.rotate(-0.2);
+    canvas.rotate(-0.35);
     canvas.drawOval(
-        Rect.fromCenter(center: Offset.zero, width: 16, height: 12),
+        Rect.fromCenter(center: Offset.zero, width: 17, height: 12),
         notePaint);
     canvas.restore();
 
-    // Draw stem
-    canvas.drawLine(
-      Offset(noteX + 7, noteY),
-      Offset(noteX + 7, noteY - 44),
-      Paint()
-        ..color = isDark ? const Color(0xFF22D3EE) : const Color(0xFF1E3A8A)
-        ..strokeWidth = 2.5,
-    );
+    // Draw stem. Standard engraving rule: notes on or above the middle
+    // line (B4) have the stem going down on the left; lower notes have
+    // the stem going up on the right.
+    final stemPaint = Paint()
+      ..color = inkColor
+      ..strokeWidth = 2;
+    const double stemLength = 3.5 * lineSpacing;
+    if (pos <= 4) {
+      canvas.drawLine(Offset(noteX - 7.5, noteY + 1),
+          Offset(noteX - 7.5, noteY + stemLength), stemPaint);
+    } else {
+      canvas.drawLine(Offset(noteX + 7.5, noteY - 1),
+          Offset(noteX + 7.5, noteY - stemLength), stemPaint);
+    }
   }
 
-  int _getNotePosition(String note) {
+  /// Vertical position on a treble stave, counted in half line-spaces
+  /// down from the top line (F5 = 0). Notes are in the octave starting
+  /// at Middle C (C4), matching the audio files:
+  /// B4 = middle line, G4 = 2nd line from bottom, E4 = bottom line,
+  /// D4 = just below the stave, C4 = first ledger line below.
+  /// Sharps sit on the same line or space as their natural note.
+  static int staffPosition(String note) {
     const Map<String, int> positions = {
-      'B': 0,
-      'A#': 1,
-      'A': 1,
-      'G#': 2,
-      'G': 2,
-      'F#': 3,
-      'F': 3,
-      'E': 4,
-      'D#': 5,
-      'D': 5,
-      'C#': 6,
-      'C': 6,
+      'B': 4,
+      'A#': 5,
+      'A': 5,
+      'G#': 6,
+      'G': 6,
+      'F#': 7,
+      'F': 7,
+      'E': 8,
+      'D#': 9,
+      'D': 9,
+      'C#': 10,
+      'C': 10,
     };
-    return positions[note] ?? 0;
+    return positions[note] ?? 4;
   }
 
   @override
@@ -1088,4 +1459,124 @@ class StaffPainter extends CustomPainter {
       oldDelegate.targetNote != targetNote ||
       oldDelegate.isDark != isDark ||
       oldDelegate.hideNote != hideNote;
+}
+
+/// A note shown in the staff tutorial diagrams.
+class TutorialNote {
+  final String label;
+  final int pos; // half-spaces down from the top line (F5 = 0)
+  final Color color;
+  final bool sharp;
+  const TutorialNote(this.label, this.pos, this.color, {this.sharp = false});
+}
+
+/// Staff with treble clef and labelled notes, for the tutorial pages.
+class TutorialStaffPainter extends CustomPainter {
+  final List<TutorialNote> notes;
+  final bool isDark;
+  final bool highlightGLine;
+
+  TutorialStaffPainter({
+    required this.notes,
+    required this.isDark,
+    this.highlightGLine = false,
+  });
+
+  static const double ls = 14; // line spacing
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double startY = 24; // top line
+    const double bottomY = startY + 4 * ls;
+    final lineColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
+    const gColor = Color(0xFF22D3EE);
+
+    for (int i = 0; i < 5; i++) {
+      final y = startY + i * ls;
+      final isG = highlightGLine && i == 3;
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        Paint()
+          ..color = isG ? gColor : lineColor
+          ..strokeWidth = isG ? 3 : 1.3,
+      );
+    }
+
+    // Treble clef
+    final double clefScale = ls / TrebleClef.unitsPerSpace;
+    canvas.save();
+    canvas.translate(2 - TrebleClef.minX * clefScale, bottomY);
+    canvas.scale(clefScale);
+    canvas.drawPath(
+      TrebleClef.path,
+      Paint()..color = isDark ? Colors.white70 : const Color(0xFF1E293B),
+    );
+    canvas.restore();
+    final double clefRight = 2 + TrebleClef.width * clefScale;
+
+    if (highlightGLine) {
+      _label(canvas, 'G line', Offset(size.width - 4, startY + 3 * ls - 10),
+          gColor, alignRight: true, bold: true);
+      return;
+    }
+    if (notes.isEmpty) return;
+
+    final double left = clefRight + 14;
+    final double step = (size.width - left - 8) / notes.length;
+    const double labelY = bottomY + 3.2 * ls;
+
+    for (int i = 0; i < notes.length; i++) {
+      final n = notes[i];
+      final double x = left + step * (i + 0.5);
+      final double y = startY + n.pos * (ls / 2);
+      final paint = Paint()..color = n.color;
+
+      // Ledger line for Middle C
+      if (n.pos >= 10) {
+        canvas.drawLine(Offset(x - 11, startY + 5 * ls),
+            Offset(x + 11, startY + 5 * ls), paint..strokeWidth = 1.5);
+      }
+      // Hollow (whole-note style) notehead
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(-0.3);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: 14, height: 10),
+        Paint()
+          ..color = n.color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6,
+      );
+      canvas.restore();
+      if (n.sharp) {
+        _label(canvas, '♯', Offset(x - 10, y), n.color,
+            alignRight: true, size: 16);
+      }
+      _label(canvas, n.label, Offset(x, labelY), n.color, bold: true);
+    }
+  }
+
+  void _label(Canvas canvas, String text, Offset at, Color color,
+      {bool alignRight = false, bool bold = false, double size = 13}) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final dx = alignRight ? at.dx - tp.width : at.dx - tp.width / 2;
+    tp.paint(canvas, Offset(dx, at.dy - tp.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant TutorialStaffPainter old) =>
+      old.notes != notes ||
+      old.isDark != isDark ||
+      old.highlightGLine != highlightGLine;
 }
