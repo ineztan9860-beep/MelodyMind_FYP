@@ -55,27 +55,6 @@ flutter build web --release
 firebase deploy --only hosting
 ```
 
----
-
-## Testing
-
-Automated tests in `test/` cover authentication logic, email validation, game logic, level mastery, user profiles, Rhythm Challenge song timing and scoring, and staff note positions.
-
-```bash
-flutter test
-```
-
----
-
-## Version history
-
-| Version | Notes |
-|---|---|
-| **1.0.4+5** | Post-usability-study update: Rhythm Challenge metronome and tempo modes; Note Identification staff positions corrected, treble clef and staff tutorial added, starts on Easy; new in-tune piano notes (C4–B4); Sequence Memory fits on one screen; audio overlap fixes; background music pauses during games |
-| **1.0.3+4** | Version used in the usability study |
-
----
-
 ## Credits
 
 - **Piano note recordings:** [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
