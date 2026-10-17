@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -152,7 +153,7 @@ class _MelodyMindAppState extends ConsumerState<MelodyMindApp>
         '/home': (context) => const MainNavigation(),
         '/game': (context) {
           final args = ModalRoute.of(context)?.settings.arguments as String?;
-          return GameplayScreen(difficulty: args ?? 'Medium');
+          return GameplayScreen(difficulty: args ?? 'Easy');
         },
         '/level_details': (context) => const LevelDetailsScreen(),
         '/settings': (context) => const SettingsScreen(),

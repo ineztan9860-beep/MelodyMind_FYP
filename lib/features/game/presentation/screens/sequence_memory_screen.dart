@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/audio_provider.dart';
@@ -134,9 +136,12 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
+            // No scrolling: everything fits on one screen so a glowing
+            // tile can never be hidden off-screen during the watch phase.
+            Positioned.fill(
+            child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
               child: Column(
                 children: [
                   // HEADER
@@ -188,7 +193,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // HOW TO PLAY quick-ref banner
                   Container(
@@ -227,7 +232,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // LIVES
                   Row(
@@ -246,12 +251,12 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     }),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // SCORE CARD
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
                       color: theme.cardColor,
                       borderRadius: BorderRadius.circular(24),
@@ -303,7 +308,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                   ),
 
                   // Progress bar below score card
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
@@ -314,7 +319,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 14),
 
                   // TURN INDICATOR
                   AnimatedContainer(
@@ -357,7 +362,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   // PROGRESS DOTS
                   Row(
@@ -389,70 +394,59 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     }),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 14),
 
-                  // NOTE GRID (2x3)
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemCount: 6,
-                    itemBuilder: (context, index) {
-                      final noteData = _notes[index];
-                      final bool isActive =
-                          _activeColorNote == noteData['note'];
-                      return GestureDetector(
-                        onTap: () => _handleNoteTap(noteData['note']),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? noteData['color']
-                                : noteData['color']
-                                    .withValues(alpha: isDark ? 0.4 : 0.8),
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              if (isActive)
-                                BoxShadow(
-                                  color: noteData['color']
-                                      .withValues(alpha: 0.5),
-                                  blurRadius: 24,
-                                  spreadRadius: 6,
-                                ),
-                            ],
-                          ),
+                  // NOTE GRID: fills the space that is left, so all 6 tiles
+                  // are always visible. 2 columns x 3 rows normally; on very
+                  // short screens it switches to 3 columns x 2 rows so the
+                  // tiles stay a comfortable size to tap.
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        const double gap = 12;
+                        final w = constraints.maxWidth;
+                        final h = constraints.maxHeight;
+                        int cols = 2;
+                        int rows = 3;
+                        if ((h - gap * 2) / 3 < 72) {
+                          cols = 3;
+                          rows = 2;
+                        }
+                        final double tileW = (w - gap * (cols - 1)) / cols;
+                        // Never taller than slightly more than wide
+                        final double tileH = min(
+                          (h - gap * (rows - 1)) / rows,
+                          tileW * 0.9,
+                        ).clamp(40.0, double.infinity).toDouble();
+                        return Center(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                noteData['note'],
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.w900),
-                              ),
-                              Text(
-                                noteData['label'],
-                                style: TextStyle(
-                                  color: Colors.white
-                                      .withValues(alpha: 0.75),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(rows, (r) {
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                    bottom: r < rows - 1 ? gap : 0),
+                                child: Row(
+                                  children: List.generate(cols, (c) {
+                                    final index = r * cols + c;
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                          right: c < cols - 1 ? gap : 0),
+                                      child: SizedBox(
+                                        width: tileW,
+                                        height: tileH,
+                                        child: _noteTile(index, tileH, isDark),
+                                      ),
+                                    );
+                                  }),
                                 ),
-                              ),
-                            ],
+                              );
+                            }),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   if (!_isGameOver && !_isLevelComplete)
                     SizedBox(
                       width: double.infinity,
@@ -472,6 +466,7 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
                     ),
                 ],
               ),
+            ),
             ),
 
             // ── Tutorial overlay ─────────────────────────────────────────
@@ -600,6 +595,55 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
         ),
       ),
       bottomNavigationBar: const AppBottomNav(),
+    );
+  }
+
+  /// One coloured note tile. Text scales with the tile height.
+  Widget _noteTile(int index, double tileH, bool isDark) {
+    final noteData = _notes[index];
+    final bool isActive = _activeColorNote == noteData['note'];
+    final Color color = noteData['color'];
+    final double noteSize = (tileH * 0.36).clamp(20.0, 40.0).toDouble();
+    final double labelSize = (tileH * 0.12).clamp(10.0, 13.0).toDouble();
+    return GestureDetector(
+      onTap: () => _handleNoteTap(noteData['note']),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: isActive
+              ? color
+              : color.withValues(alpha: isDark ? 0.4 : 0.8),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            if (isActive)
+              BoxShadow(
+                color: color.withValues(alpha: 0.5),
+                blurRadius: 24,
+                spreadRadius: 6,
+              ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              noteData['note'],
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: noteSize,
+                  fontWeight: FontWeight.w900),
+            ),
+            Text(
+              noteData['label'],
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: labelSize,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
