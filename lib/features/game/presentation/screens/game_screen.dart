@@ -59,11 +59,21 @@ class GameScreenState extends ConsumerState<GameplayScreen> {
   int _tutorialPage = 0;
   static const int _tutorialPageCount = 4;
 
+  // Kept so it can still be used in dispose()
+  late final _audio = ref.read(audioServiceProvider);
+
   @override
   void initState() {
     super.initState();
+    _audio.enterGame(); // pause background music during the game
     _currentDifficulty = widget.difficulty;
     _resetGame();
+  }
+
+  @override
+  void dispose() {
+    _audio.exitGame(); // bring background music back
+    super.dispose();
   }
 
   void _resetGame() {

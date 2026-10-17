@@ -37,10 +37,20 @@ class _SequenceMemoryScreenState extends ConsumerState<SequenceMemoryScreen> {
     {'note': 'A', 'color': const Color(0xFF22D3EE), 'label': 'La'},
   ];
 
+  // Kept so it can still be used in dispose()
+  late final _audio = ref.read(audioServiceProvider);
+
   @override
   void initState() {
     super.initState();
+    _audio.enterGame(); // pause background music during the game
     // Don't start the game until tutorial is dismissed
+  }
+
+  @override
+  void dispose() {
+    _audio.exitGame(); // bring background music back
+    super.dispose();
   }
 
   void _startGame() {
