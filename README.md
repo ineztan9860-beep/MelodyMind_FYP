@@ -4,14 +4,6 @@
 
 MelodyMind helps beginners build core musical skills (recognising notes, remembering melodies and keeping a steady beat) through three short games with Easy, Medium and Hard levels, scores, streaks and a leaderboard.
 
-| | |
-|---|---|
-| 🌐 **Play on the web** | https://melodymindfyp.web.app |
-| 📱 **Android APK** | [Download from Releases](../../releases/latest) |
-| 🍎 **iPhone** | Open the web link in Safari → Share → **Add to Home Screen** (turn off Silent Mode to hear the notes) |
-
----
-
 ## Games
 
 ### 🎼 Note Identification
@@ -41,28 +33,6 @@ Play melodies on an on-screen piano.
 - **Riverpod:** state management
 - **audioplayers:** low-latency note, metronome and music playback
 
----
-
-## Project structure
-
-```
-lib/
-├── core/            # Audio service and shared providers
-├── features/
-│   ├── auth/        # Sign-in, sign-up, guest mode
-│   ├── game/        # The three games, song data, staff drawing
-│   ├── profile/     # User profile and settings
-│   └── scoring/     # Results, analytics, leaderboard
-├── shared/          # Shared widgets (navigation bar, etc.)
-└── main.dart        # App entry point and routes
-assets/
-├── audio/           # Piano notes (C4–B4), metronome ticks, effects, music
-└── images/          # Logo and app icons
-test/                # Unit and widget tests
-```
-
----
-
 ## Getting started
 
 **Requirements:** Flutter SDK (stable), Android Studio or VS Code, and an Android phone or emulator.
@@ -84,27 +54,6 @@ flutter build apk --release
 flutter build web --release
 firebase deploy --only hosting
 ```
-
----
-
-## Testing
-
-Automated tests in `test/` cover authentication logic, email validation, game logic, level mastery, user profiles, Rhythm Challenge song timing and scoring, and staff note positions.
-
-```bash
-flutter test
-```
-
----
-
-## Version history
-
-| Version | Notes |
-|---|---|
-| **1.0.4+5** | Post-usability-study update: Rhythm Challenge metronome and tempo modes; Note Identification staff positions corrected, treble clef and staff tutorial added, starts on Easy; new in-tune piano notes (C4–B4); Sequence Memory fits on one screen; audio overlap fixes; background music pauses during games |
-| **1.0.3+4** | Version used in the usability study |
-
----
 
 ## Credits
 
